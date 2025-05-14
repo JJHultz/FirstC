@@ -7,7 +7,10 @@
 #define WIDTH 126
 #define HEIGHT 32
 #define PLATFORM_COUNT 10
-// #define CROUCHING 0
+
+int HEALTH = 10;
+
+int LEVEL = 0;
 
 int CROUCHING = 0;
 
@@ -23,9 +26,38 @@ typedef struct {
 } Platform;
 
 Platform* platArr[PLATFORM_COUNT];
+Character player = {10.0, 5.0, 0.0, 0.0, 0.0, 0.0, true};
+
+// here will be the arrays of level platforms
+
+// here we will define a function that will load levels
+
+void loadLevel() {
+    for (int i = 0; i < PLATFORM_COUNT; i++) platArr[i] = NULL; // clear old refs
+    HEALTH = 10;
+
+    if (LEVEL == 0) {
+        static Platform plat1 = {20, 30, 80};
+        platArr[0] = &plat1;
+        player.x = 21;
+        player.y = 29;
+    }
+
+    if (LEVEL == 1) {
+        static Platform plat1 = {20, 30, 20};
+        static Platform plat2 = {60, 30, 20};
+        platArr[0] = &plat1;
+        platArr[1] = &plat2;
+
+        player.x = 21;
+        player.y = 29;
+    }
+}
 
 void draw(Character player) {
     clear();  // Use ncurses clear
+
+    for (int i = 0; i < HEALTH; i++) mvprintw(0, 2*i, "[]");
 
     if (!CROUCHING) mvprintw((int)player.y, (int)player.x, "O");  // Draw character
     if (CROUCHING) mvprintw((int)player.y, (int)player.x, "o");
@@ -44,12 +76,12 @@ void draw(Character player) {
 }
 
 int main() {
-    Character player = {10.0, 5.0, 0.0, 0.0, 0.0, 0.0, true};
+    // Character player = {10.0, 5.0, 0.0, 0.0, 0.0, 0.0, true};
     // int CROUCHING = 0;
 
     // Create a platform
-    Platform plat1 = {20, 30, 80};
-    platArr[0] = &plat1;
+    // Platform plat1 = {20, 30, 80};
+    // platArr[0] = &plat1;
 
     initscr();
     cbreak();
@@ -57,10 +89,19 @@ int main() {
     nodelay(stdscr, TRUE);
     keypad(stdscr, TRUE);
 
+    loadLevel();
+    
     while (1) {
         draw(player);
 
         int ch = getch();
+
+	// here we will check if the player's current/new position is at the level end
+	// for now it will be a key press as an event placeholder
+	if (ch == '7') {
+	    LEVEL += 1;
+	    loadLevel();
+	}
 
         // Handle input only if in air
         if (player.inAir) {
@@ -130,8 +171,14 @@ int main() {
         }
 
         // Screen boundary collision
-        if (player.x < 0 || player.x > WIDTH)  player.vx *= -1;
-        if (player.y < 0 || player.y > HEIGHT) player.vy = -0.5;
+        if (player.x < 0 || player.x > WIDTH) {
+		player.vx *= -1; 
+		HEALTH -= 1;
+	}
+        if (player.y < 0 || player.y > HEIGHT) {
+		player.vy = -0.5;
+		HEALTH -= 1; 
+        }
 
         usleep(10000);  // 10ms delay
     }
